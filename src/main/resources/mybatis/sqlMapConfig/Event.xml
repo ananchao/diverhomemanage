@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Event">
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+
+	<insert id="insertEventUser" useGeneratedKeys="true"
+		keyProperty="id" parameterType="hashmap">
+		insert into tb_event_user
+		(name,age,email,phone,wechat,sex,qualification)
+		values
+		(#{name},#{age},#{email},#{phone},#{wechat},#{sex},#{qualification})
+	</insert>
+
+	<select id="selectTotal" resultType="int">
+		select count(name) from tb_event_user
+	</select>
+
+</mapper>
+

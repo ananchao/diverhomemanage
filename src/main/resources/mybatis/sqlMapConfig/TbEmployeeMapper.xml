@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TbEmployeeMapper">
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+
+	<!-- 查询所有员工 -->
+	<select id="getEmployeeList" parameterType="string" resultType="TbEmployee"
+		useCache="true">
+		select t1.*,t2.position_desc from tb_employee
+		t1,tb_position_dictionary t2 where t1.position_id=t2.position_id
+		and t1.state='1' and t1.type=#{type} order by t1.insert_time
+	</select>
+</mapper>
+

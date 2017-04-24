@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TbOrderMapper">
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+
+	<!-- 条件查询订单总数 -->
+	<select id="getOrderTotal" parameterType="pd" resultType="int"
+		useCache="true">
+		select count(t1.id) from tb_order t1,tb_membership t2 where 
+		t1.member_id=t2.id
+		<choose>
+		    <when test="state != null and state != ''">
+		        and t1.state = #{state}
+		    </when>
+		    <otherwise>
+		        <![CDATA[
+		        	and t1.state <> '2'
+		        ]]>
+		    </otherwise>
+		</choose>
+		<if test="verification_code != null and verification_code != ''">
+			and t1.verification_code like CONCAT('%',#{verification_code},'%')
+		</if>
+		<if test="member_name != null and member_name != ''">
+			and t2.name like CONCAT('%',#{member_name},'%')
+		</if>
+		<if test="member_phone != null and member_phone != ''">
+			and t2.phone like CONCAT('%',#{member_phone},'%')
+		</if>
+	</select>
+	
+	<!-- 条件分页查询订单  -->
+	<select id="getOrderList" parameterType="pd" resultMap="orderResult"
+		useCache="true">
+		 select 
+		 t1.id as order_id,
+		 t1.order_no,
+		 t1.state as order_state,
+		 t1.verification_code,
+		 t1.order_price,
+		 t1.member_id as order_member_id,
+		 t1.product_id as order_product_id,
+		 t1.insert_time as order_insert_time,
+		 t1.validate_time,
+		 t2.id as member_id,
+		 t2.name as member_name,
+		 t2.age,
+		 t2.phone as member_phone,
+		 t2.email as member_email,
+		 t2.sex,
+		 t2.qualification,
+		 t2.area_code,
+		 t2.join_way,
+		 t2.insert_time as member_insert_time,
+		 t3.id as product_id,
+		 t3.title,
+		 t3.brand,
+		 t3.original_price,
+		 t3.member_price,
+		 t3.img_url,
+		 t3.thumbnail_img_url,
+		 t3.description,
+		 t3.quantity,
+		 t3.type as product_type,
+		 t3.label,
+		 t3.state as product_state,
+		 t3.insert_time as product_insert_time,
+		 t4.area_name
+		 from tb_order t1,tb_membership t2,tb_product t3,tb_area_dictionary t4 where 
+		 t1.member_id=t2.id and t1.product_id=t3.id and t2.area_code=t4.area_code
+		<choose>
+		    <when test="state != null and state != ''">
+		        and t1.state = #{state}
+		    </when>
+		    <otherwise>
+				<!-- 选择订单状态为全部，查找的是已验证和待验证的订单 -->
+		        <![CDATA[
+		        	and t1.state <> '2'
+		        ]]>
+		    </otherwise>
+		</choose>
+		<if test="verification_code != null and verification_code != ''">
+			and t1.verification_code like CONCAT('%',#{verification_code},'%')
+		</if>
+		<if test="member_name != null and member_name != ''">
+			and t2.name like CONCAT('%',#{member_name},'%')
+		</if>
+		<if test="member_phone != null and member_phone != ''">
+			and t2.phone like CONCAT('%',#{member_phone},'%')
+		</if>
+		<if test="member_id != null and member_id != ''">
+			and t2.id = #{member_id}
+		</if>
+		order by t1.insert_time desc
+		limit ${startLimit},${pageSize}
+	</select>
+	
+	<!-- 查询订单详情  -->
+	<select id="getOrderInfo" parameterType="pd" resultMap="orderResult"
+		useCache="true">
+		 select 
+		 t1.id as order_id,
+		 t1.order_no,
+		 t1.state as order_state,
+		 t1.verification_code,
+		 t1.order_price,
+		 t1.member_id as order_member_id,
+		 t1.product_id as order_product_id,
+		 t1.insert_time as order_insert_time,
+		 t1.validate_time,
+		 t2.id as member_id,
+		 t2.name as member_name,
+		 t2.age,
+		 t2.phone as member_phone,
+		 t2.email as member_email,
+		 t2.sex,
+		 t2.qualification,
+		 t2.area_code,
+		 t2.join_way,
+		 t2.insert_time as member_insert_time,
+		 t3.id as product_id,
+		 t3.title,
+		 t3.brand,
+		 t3.original_price,
+		 t3.member_price,
+		 t3.img_url,
+		 t3.description,
+		 t3.quantity,
+		 t3.type as product_type,
+		 t3.label,
+		 t3.state as product_state,
+		 t3.insert_time as product_insert_time,
+		 t4.area_name
+		 from tb_order t1,tb_membership t2,tb_product t3,tb_area_dictionary t4 where 
+		 t1.member_id=t2.id and t1.product_id=t3.id and t2.area_code=t4.area_code
+		<if test="id != null and id != ''">
+			and t1.id=#{id}
+		</if>
+		<if test="order_no != null and order_no != ''">
+			and order_no=#{order_no}
+		</if>
+	</select>
+	
+	<resultMap id="orderResult" type="TbOrder">
+	  <id property="id" column="order_id" />
+	  <result property="order_no" column="order_no" />
+	  <result property="state" column="order_state"/>
+	  <result property="verification_code" column="verification_code"/>
+	  <result property="order_price" column="order_price"/>
+	  <result property="member_id" column="order_member_id"/>
+	  <result property="product_id" column="order_product_id"/>
+	  <result property="insert_time" column="order_insert_time"/>
+	  <result property="validate_time" column="validate_time"/>
+	  <association property="memberShip" column="member_id" javaType="TbMemberShip" resultMap="memberResult"/>
+	  <association property="product" column="product_id" javaType="TbProduct" resultMap="productResult"/>
+	</resultMap>
+	
+	<resultMap id="memberResult" type="TbMemberShip">
+	  <id property="id" column="member_id"/>
+	  <result property="name" column="member_name"/>
+	  <result property="age" column="age"/>
+	  <result property="phone" column="member_phone"/>
+	  <result property="email" column="member_email"/>
+	  <result property="sex" column="sex"/>
+	  <result property="qualification" column="qualification"/>
+	  <result property="area_code" column="area_code"/>
+	  <result property="join_way" column="join_way"/>
+	  <result property="insert_time" column="member_insert_time"/>
+	  <result property="area_name" column="area_name"/>
+	</resultMap>
+	
+	<resultMap id="productResult" type="TbProduct">
+	  <id property="id" column="product_id"/>
+	  <result property="title" column="title"/>
+	  <result property="brand" column="brand"/>
+	  <result property="original_price" column="original_price"/>
+	  <result property="member_price" column="member_price"/>
+	  <result property="img_url" column="img_url"/>
+	  <result property="thumbnail_img_url" column="thumbnail_img_url"/>
+	  <result property="description" column="description"/>
+	  <result property="quantity" column="quantity"/>
+	  <result property="type" column="product_type"/>
+	  <result property="label" column="label"/>
+	  <result property="state" column="product_state"/>
+	  <result property="insert_time" column="product_insert_time"/>
+	</resultMap>
+	
+	<!-- 更新订单状态 -->
+	<update id="updateOrderState" parameterType="pd">
+	  update tb_order
+  		<trim prefix="SET" suffixOverrides=",">
+  		    state=#{state},
+			<!-- 如果是将状态改为已验证，需要更新验证时间 -->
+		    <if test="validate_time != null and validate_time != ''">
+				validate_time= STR_TO_DATE(#{validate_time},'%Y-%m-%d %H:%i:%s')
+			</if>
+		</trim>
+	  where id=#{id}
+	</update>
+	
+	<!-- 近30订单 -->
+	<select id="getOrderBarList" resultType="pd" useCache="true">
+		SELECT
+			count(insert_time) as count,
+			insert_time
+		FROM
+			(
+				SELECT
+					date_format(insert_time , '%c月%e') AS insert_time
+				FROM
+					tb_order
+				WHERE
+					state != '2'
+				ORDER BY
+					insert_time
+				LIMIT 30
+			) t
+		GROUP BY
+			t.insert_time
+		ORDER BY
+			insert_time DESC
+	</select>
+	
+	<!-- 微信下单 -->
+	<insert id="addWechatOrder" useGeneratedKeys="true" keyProperty="id" parameterType="pd">
+	    insert into tb_order (
+	    	order_no,
+	    	verification_code,
+	    	order_price,
+	    	member_id,
+	    	product_id
+	    ) values (
+	    	#{order_no},
+	    	#{verification_code},
+	    	#{order_price},
+	    	#{member_id},
+	    	#{product_id})
+	</insert>
+</mapper>
+

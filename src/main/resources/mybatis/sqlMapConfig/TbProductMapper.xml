@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TbProductMapper">
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+
+	<!-- 查询产品 -->
+	<select id="getProductList" parameterType="pd" resultType="TbProduct" useCache="true">
+		select * from tb_product
+		<where> 
+		    <trim prefixOverrides="and">
+				<if test="state != null and state != ''">
+					state=#{state}
+				</if>
+				<if test="type != null and type != ''">
+					and type=#{type}
+				</if>
+				<if test="title != null and title != ''">
+					and title like CONCAT('%',#{title},'%')
+				</if>
+				<if test="label != null and label != ''">
+					and label like CONCAT('%',#{label},'%')
+				</if>
+			</trim>
+		</where>
+		order by insert_time desc
+		<if test="startLimit != null and startLimit != '' and pageSize != null and pageSize != ''">
+			limit ${startLimit},${pageSize}
+		</if>
+	</select>
+	
+	<!-- 根据id查询产品 -->
+	<select id="getProductById" parameterType="pd" resultType="TbProduct" useCache="true">
+		select * from tb_product where id=#{id}
+	</select>
+	
+	<!-- 更新产品信息 -->
+	<update id="updateProduct" parameterType="pd">
+	  update tb_product set
+	    title=#{title},
+	    brand=#{brand},
+	    original_price=#{original_price},
+	    member_price=#{member_price},
+	    <if test="img_url != null and img_url != ''">
+			img_url=#{img_url},
+		</if>
+		<if test="thumbnail_img_url != null and thumbnail_img_url != ''">
+			thumbnail_img_url=#{thumbnail_img_url},
+		</if>
+	    description=#{description},
+	    quantity=#{quantity},
+	    label=#{label},
+	    state=#{state}
+	  where id=#{id}
+	</update>
+	
+	<!-- 新增产品 -->
+	<insert id="addProduct" useGeneratedKeys="true" keyProperty="id" parameterType="pd">
+		insert into tb_product
+		(title,brand,original_price,member_price,img_url,thumbnail_img_url,description,quantity,type,label,state)
+		values
+		(#{title},#{brand},#{original_price},#{member_price},#{img_url},#{thumbnail_img_url},#{description},#{quantity},#{type},#{label},#{state})
+	</insert>
+	
+	<!-- 查询畅销产品Top10 -->
+	<select id="getBestSellProductList" resultType="pd" useCache="true">
+		SELECT
+			t2.id ,
+			t2.title ,
+			t2.type ,
+			t3.quantity
+		FROM
+			tb_product t2 ,
+			(
+				SELECT
+					t1.product_id ,
+					count(id) AS quantity
+				FROM
+					tb_order t1
+				WHERE
+					t1.state = '1'
+				GROUP BY
+					t1.product_id
+				ORDER BY
+					quantity DESC
+				LIMIT 10
+			) t3
+		WHERE
+			t2.id = t3.product_id ORDER BY t3.quantity DESC
+	</select>
+</mapper>
+

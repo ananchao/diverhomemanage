@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TbNoticeMapper">
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+	
+	<!-- 分页获取公告 -->
+	<select id="getNoticeListPage" resultType="TbNotice" useCache="true">
+		SELECT
+			*
+		FROM
+			tb_notice
+		ORDER BY
+			insert_time DESC
+		Limit ${startLimit},${pageSize}
+	</select>
+	
+	<!-- 新增公告 -->
+	<insert id="addNotice" useGeneratedKeys="true" keyProperty="id" parameterType="pd">
+		insert into tb_notice (title,content) values (#{title},#{content})
+	</insert>
+	
+	<!-- 获取member_id对应的已读公告 -->
+	<select id="getMemberNoticeId" resultType="TbNotice" parameterType="pd" useCache="true">
+		select t2.* from tb_member_notice t1, tb_notice t2 where t1.member_id=#{member_id} and t1.notice_id=t2.id
+	</select>
+	
+	<!-- 增加会员已读公告记录 -->
+	<insert id="addMemberNotice" parameterType="pd">
+	    INSERT INTO tb_member_notice(member_id , notice_id) VALUES( #{member_id} , (select min(id) from tb_notice))
+	</insert>
+	
+	<!-- 获取微信用户未读公告数 -->
+	<select id="getNoticeBadge" resultType="int" parameterType="pd" useCache="false">
+		select count(id) from tb_notice where id>(select notice_id from tb_member_notice where member_id=#{member_id})
+	</select>
+	
+	<!-- 更新用户已读公告 -->
+	<update id="updateReadNotice" parameterType="pd">
+		UPDATE tb_member_notice SET notice_id =(SELECT max(id) FROM tb_notice) WHERE member_id = #{member_id}
+	</update>
+</mapper>
+

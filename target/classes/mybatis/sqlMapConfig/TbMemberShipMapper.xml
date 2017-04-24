@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TbMemberShipMapper">
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+	
+	<!-- 条件查询会员列表 -->
+	<select id="getMemberListTotal" parameterType="pd" resultType="TbMemberShip"
+		useCache="true">
+		select * from tb_membership 
+		<where> 
+		    <trim prefixOverrides="and">
+				<if test="membership_level != null and membership_level != ''">
+					 membership_level=#{membership_level}
+				</if>
+				<if test="name != null and name != ''">
+					and name like CONCAT('%',#{name},'%') 
+				</if>
+				<if test="phone != null and phone != ''">
+					and phone like CONCAT('%',#{phone},'%') 
+				</if>
+				<if test="sex != null and sex != ''">
+					and sex=#{sex} 
+				</if>
+				<if test="join_way != null and join_way != ''">
+					and join_way=#{join_way} 
+				</if>
+				<if test="qualification != null and qualification != ''">
+					and qualification=#{qualification} 
+				</if>
+			</trim>
+		</where>
+	</select>
+	
+	<!-- 条件分页查询VIP会员 -->
+	<select id="getVipMemberList" parameterType="pd" resultType="TbMemberShip"
+		useCache="true">
+		select t1.*,t2.area_name from tb_membership t1,tb_area_dictionary t2 
+		where t1.area_code=t2.area_code and t1.membership_level='1'
+		<if test="name != null and name != ''">
+			and name like CONCAT('%',#{name},'%') 
+		</if>
+		<if test="phone != null and phone != ''">
+			and phone like CONCAT('%',#{phone},'%') 
+		</if>
+		order by t1.insert_time desc
+		limit ${startLimit},${pageSize}
+	</select>
+	
+	<!-- 条件分页查询普通会员 -->
+	<select id="getRegularMemberList" parameterType="pd" resultType="TbMemberShip"
+		useCache="true">
+		select t1.* from tb_membership t1 where t1.membership_level='0'
+		<if test="phone != null and phone != ''">
+			and phone like CONCAT('%',#{phone},'%')  
+		</if>
+		order by t1.insert_time desc
+		limit ${startLimit},${pageSize}
+	</select>
+	
+	<!-- 新增vip会员 -->
+	<insert id="addVipMember" useGeneratedKeys="true"
+		keyProperty="id" parameterType="pd">
+		insert into tb_membership
+		(name,age,phone,email,sex,qualification,area_code,membership_level,join_way)
+		values
+		(#{name},#{age},#{phone},#{email},#{sex},#{qualification},#{area_code},#{membership_level},#{join_way})
+	</insert>
+	
+	<!-- 按条件计算平均年龄 -->
+	<select id="getAvgAge" parameterType="pd" resultType="float"
+		useCache="true">
+		select ROUND(avg(age),1) from tb_membership 
+		<where> 
+		    <trim prefixOverrides="and">
+				<if test="sex != null and sex != ''">
+					sex=#{sex} 
+				</if>
+			</trim>
+		</where>
+	</select>
+	
+	<!-- 会员所在地区分布排行 -->
+	<select id="getMemberAreaList" resultType="pd" useCache="false">
+		SELECT
+			m.area_name ,
+			m.lng ,
+			m.lat ,
+			n.count
+		FROM
+			tb_area_dictionary m ,
+			(
+				SELECT
+					t2.area_code ,
+					count(t2.area_name) count
+				FROM
+					tb_membership t1 ,
+					tb_area_dictionary t2
+				WHERE
+					t1.area_code = t2.area_code
+				GROUP BY
+					t2.area_code
+			) n
+		WHERE
+			m.area_code = n.area_code
+		ORDER BY
+			count DESC
+	</select>
+	
+	<!-- 微信登录 -->
+	<select id="wechatLogin" parameterType="pd" resultType="TbMemberShip"
+		useCache="true">
+		select * from tb_membership where phone = #{phone}
+	</select>
+	
+	<!-- 根据id获取会员信息 -->
+	<select id="getMemberById" parameterType="pd" resultType="TbMemberShip"
+		useCache="true">
+		select t1.*,t2.area_name from tb_membership t1 left JOIN tb_area_dictionary t2 on t1.area_code=t2.area_code where t1.id = #{member_id}
+	</select>
+	
+	<!-- 更新会员信息 -->
+	<update id="updateMemberInfo" parameterType="pd">
+	  update tb_membership
+  		<trim prefix="SET" suffixOverrides=",">
+  		    <if test="name != null and name != ''">
+				name=#{name},
+			</if>
+			<if test="age != null and age != ''">
+				age=#{age},
+			</if>
+			<if test="phone != null and phone != ''">
+				phone=#{phone},
+			</if>
+			<if test="email != null and email != ''">
+				email=#{email},
+			</if>
+			<if test="sex != null and sex != ''">
+				sex=#{sex},
+			</if>
+			<if test="qualification != null and qualification != ''">
+				qualification=#{qualification},
+			</if>
+			<if test="area_code != null and area_code != ''">
+				area_code=#{area_code},
+			</if>
+			<if test="join_way != null and join_way != ''">
+				join_way=#{join_way},
+			</if>
+			<if test="openid != null and openid != ''">
+				openid=#{openid},
+			</if>
+			<if test="visit_count != null and visit_count != ''">
+				visit_count=#{visit_count},
+			</if>
+			<if test="update_time != null and update_time != ''">
+				update_time=#{update_time},
+			</if>
+		    <if test="membership_level != null and membership_level != ''">
+				membership_level=#{membership_level}
+			</if>
+		</trim>
+	  where id=#{member_id}
+	</update>
+	
+	<!-- 新增普通会员 -->
+	<insert id="addRegularMember" useGeneratedKeys="true"
+		keyProperty="id" parameterType="pd">
+		insert into tb_membership (phone, membership_level, join_way, openid) 
+		values 
+		(#{phone},#{membership_level},#{join_way}, #{openid})
+	</insert>
+</mapper>
+
